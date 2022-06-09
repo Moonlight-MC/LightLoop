@@ -221,17 +221,8 @@ module.exports.registry = {
          * @param {import('discord.js').Message} context
          */
         function fetchOnContext(context, refer) {
-            if (options.tryAuthor) {
-                const url = context.author.displayAvatarURL({ format: 'png' });
-
-                return {
-                    fail: false,
-                    value: url,
-                };
-            }
-            
             if (options.tryAttachment) {
-                if (context.attachments.length > 0) {
+                if (context.attachments.size > 0) {
                     const url = context.attachments.first().url;
 
                     return {
@@ -243,6 +234,16 @@ module.exports.registry = {
                     failure.join(`${refer} has no attachments`);
                 }
             }
+
+            if (options.tryAuthor) {
+                const url = context.author.displayAvatarURL({ format: 'png' });
+
+                return {
+                    fail: false,
+                    value: url,
+                };
+            }
+            
 
             return null;
         }
@@ -271,40 +272,43 @@ module.exports.registry = {
             }
         }
 
-        if (options.tryMention) {
+        if (argument !== null) {
 
-            const result = matchID(argument);
-            if (result !== null) {
-                try {
-                    const user = await message.guild.members.fetch(result);
-                    const url = user.displayAvatarURL({ format: 'png' });
+            if (options.tryMention) {
 
+                const result = matchID(argument);
+                if (result !== null) {
+                    try {
+                        const user = await message.guild.members.fetch(result);
+                        const url = user.displayAvatarURL({ format: 'png' });
+
+                        return {
+                            fail: false,
+                            value: url,
+                        };
+                    }
+                    catch (_) {
+                        // doesn't exist or malformed
+                        failure.push('Could not find mentioned user');
+                    }
+                }
+                else {
+                    failure.push('Argument is not a mention');
+                }
+            }
+
+            if (options.tryUrl) {
+                const url = utility.getURLs(argument ?? '')?.at(0);
+
+                if (url) {
                     return {
                         fail: false,
                         value: url,
                     };
                 }
-                catch (_) {
-                    // doesn't exist or malformed
-                    failure.push('Could not find mentioned user');
+                else {
+                    failure.join('Argument is not an Url');
                 }
-            }
-            else {
-                failure.push('Argument is not a mention');
-            }
-        }
-
-        if (options.tryUrl) {
-            const url = utility.getURLs(argument ?? '')?.at(0);
-
-            if (url) {
-                return {
-                    fail: false,
-                    value: url,
-                };
-            }
-            else {
-                failure.join('Argument is not an Url');
             }
         }
 
@@ -318,9 +322,12 @@ module.exports.registry = {
             };
         }
 
+        // this should be unreachable if tryAuthor is enabled
+
         return {
             fail: true,
             reason: failure.join('\n'),
+            useDefault: argument === null,
         };
     },
 
