@@ -26,8 +26,8 @@ async function transform(message, unparsed, config) {
         const parseResult = await parser(message, rawArgument === null ? null : rawArgument.value, definition.options || {});
 
         if (parseResult.fail) {
-            if (parseResult.useDefault && 'default' in definition) {
-                ret[definition.name] = definition.default;
+            if (parseResult.useDefault && ('default' in definition || 'defaultFactory' in definition)) {
+                ret[definition.name] = 'default' in definition ? definition.default : await definition.defaultFactory(message);
             }
             else {
                 let range;
@@ -39,10 +39,16 @@ async function transform(message, unparsed, config) {
                     range = [rawArgument.start, rawArgument.start + rawArgument.value.length + (rawArgument.quoted ? 2 : 0)];
                 }
 
+                const highlight = new Map();
+
+                highlight.set(range[0], '[2;33m');
+                highlight.set(range[1], '[0;2m');
+
                 return {
                     fail: true,
                     reason: `Parsing error for argument ${definition.name}:\n${parseResult.reason}`,
                     highlightRange: range,
+                    highlight: highlight,
                 };
             }
         }
@@ -55,7 +61,7 @@ async function transform(message, unparsed, config) {
         }
     }
 
-    if (argumentStackPointer !== splitted.length) {
+    if (argumentStackPointer < splitted.length) {
         return {
             fail: true,
             reason: 'Too many arguments provided',

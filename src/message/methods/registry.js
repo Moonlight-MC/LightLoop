@@ -1,3 +1,5 @@
+const utility = require('../../util/utility');
+
 function stateless(transformer) {
     return async (_message, argument, options) => {
         // the stateless transformer has no other way to provide
@@ -18,9 +20,9 @@ function stateless(transformer) {
 
 module.exports.registry = {
     string: stateless((argument, options) => {
-        options = Object.assign(options, {
+        options = Object.assign({
             maxLength: null,
-        });
+        }, options);
 
         if (options.maxLength !== null && options.maxLength < argument.length) {
             return {
@@ -36,13 +38,20 @@ module.exports.registry = {
     }),
 
     number: stateless((argument, options) => {
-        options = Object.assign(options, {
+        options = Object.assign({
             coerceRange: true,
             max: null,
             min: null,
-        });
+            aliases: Object.create(null),
+        }, options);
 
-        let number = parseFloat(argument);
+        let number;
+        if (argument in options.aliases) {
+            number = options.aliases[argument];
+        }
+        else {
+            number = parseFloat(argument);
+        }
 
         if (isNaN(number)) {
             return {
@@ -51,11 +60,11 @@ module.exports.registry = {
             };
         }
         if (options.coerceRange) {
-            if (options.max === null) {
+            if (options.max !== null) {
                 number = Math.min(number, options.max);
             }
 
-            if (options.min === null) {
+            if (options.min !== null) {
                 number = Math.max(number, options.min);
             }
         }
@@ -82,10 +91,10 @@ module.exports.registry = {
     }),
 
     boolean: stateless((argument, options) => {
-        options = Object.assign(options, {
+        options = Object.assign({
             truthy: ['true', 'yes', 'ye', 'y'],
             falsey: ['false', 'no'],
-        });
+        }, options);
 
         if (options.truthy.includes(argument)) {
             return {
@@ -113,10 +122,10 @@ module.exports.registry = {
      * @param {*} options 
      */
     member: async (message, argument, options) => {
-        options = Object.assign(options, {
+        options = Object.assign({
             tryReply: true,
             forceNonWebhook: true,
-        });
+        }, options);
 
         const failure = [];
 
@@ -151,7 +160,7 @@ module.exports.registry = {
 
             return {
                 fail: true,
-                reason: failure,
+                reason: failure.join('\n'),
                 useDefault: true,
             };
         }
@@ -181,17 +190,124 @@ module.exports.registry = {
         };
     },
 
-    image: async () => {
-        /* options = Object.assign(options, {
-            tryRepliedUser: true,
+    image: async (message, argument, options) => {
+        options = Object.assign({
+            tryRepliedContext: true,
             tryUrl: true,
             tryAttachment: true,
-            tryReply: true,
-        }); */
+            tryMention: true,
+            tryAuthor: true,
+        }, options);
+        /**
+         * 
+         * @param {import('discord.js').Message} context
+         */
+        function fetchOnContext(context, refer) {
+            if (options.tryAuthor) {
+                const url = context.author.displayAvatarURL({ format: 'png' });
+
+                if (url !== null) {
+                    return {
+                        fail: false,
+                        value: url,
+                    };
+                }
+                else {
+                    failure.join(`${refer}'s author has no avatar`);
+                }
+            }
+            
+            if (options.tryAttachment) {
+                if (context.attachments.length > 0) {
+                    const url = context.attachments.first().url;
+
+                    return {
+                        fail: false,
+                        value: url,
+                    };
+                }
+                else {
+                    failure.join(`${refer} has no attachments`);
+                }
+            }
+
+            return null;
+        }
+
+        const failure = [];
+
+        if (options.tryRepliedContext) {
+            try {
+                const replied = await message.fetchReference();
+
+                const result = fetchOnContext(replied, 'replied message');
+
+                if (result !== null) {
+                    return {
+                        fail: false,
+                        consume: false,
+                        value: result.value,
+                    };
+                }
+
+            }
+            catch (_) {
+                // we tried
+
+                failure.push('Fetching replied message failed');
+            }
+        }
+
+        if (options.tryMention) {
+            const regex = /<@([0-9]{18})>/;
+            const result = regex.exec(argument);
+            if (result !== null) {
+                try {
+                    const user = await message.guild.members.fetch(result[1]);
+                    const url = user.displayAvatarURL({ format: 'png' });
+
+                    return {
+                        fail: false,
+                        value: url,
+                    };
+                }
+                catch (_) {
+                    // doesn't exist or malformed
+                    failure.push('Could not find mentioned user');
+                }
+            }
+            else {
+                failure.push('Argument is not a mention');
+            }
+        }
+
+        if (options.tryUrl) {
+            const url = utility.getURLs(argument ?? '')?.at(0);
+
+            if (url) {
+                return {
+                    fail: false,
+                    value: url,
+                };
+            }
+            else {
+                failure.join('Argument is not an Url');
+            }
+        }
+
+        const fetchResult = fetchOnContext(message, 'message');
+
+        if (fetchResult !== null) {
+            return {
+                fail: false,
+                consume: false,
+                value: fetchResult.value,
+            };
+        }
 
         return {
-            fail: false,
-            value: 'ee',
+            fail: true,
+            reason: failure.join('\n'),
         };
     },
 

@@ -14,12 +14,18 @@ module.exports.default = async function (message, offset, obj) {
         content = merge(content, offset, obj.highlight);
     }
 
-    const send = `\`\`\`ansi
+    let send = `\`\`\`ansi
 
 ${escape(content)}
 [0;35m${range}[0;2m
 
 ${escape(obj.reason)}
 \`\`\``;
+
+    // max's 2000, but 300 sounds reasonable enough
+    if (send.length > 300) {
+        send = `\`\`\`${escape(obj.reason)}\`\`\``;
+    }
+
     await message.reply(send);
 };

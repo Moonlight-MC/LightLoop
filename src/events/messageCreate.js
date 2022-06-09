@@ -25,9 +25,16 @@ module.exports = {
 
             // we cannot fully split the arguments because of the experimental transformer
             const content = message.content.substring(process.env.PREFIX.length);
-            const unparsedArgs = content.substring(content.indexOf(' '));
-            const commandName = content.substring(0, content.indexOf(' '));
-            const unparsedArgsOffset = process.env.PREFIX.length + content.indexOf(' ');
+
+            let index = content.indexOf(' ');
+
+            if (index === -1) {
+                index = content.length;
+            }
+
+            const unparsedArgs = content.substring(index);
+            const commandName = content.substring(0, index);
+            const unparsedArgsOffset = process.env.PREFIX.length + index;
 
             const command = message.client.prefixCommands.get(commandName);
 
