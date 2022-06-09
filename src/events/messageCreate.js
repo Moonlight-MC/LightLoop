@@ -5,6 +5,9 @@ const ShowcaseFilter = require('../filters/showcaseFilter');
 const FaqFilter = require('../filters/faqFilter');
 const utility = require('../util/utility');
 
+const { transform } = require('../message/transformer');
+const { default: failHandler } = require('../message/failhandler');
+
 module.exports = {
     name: 'messageCreate',
     /**
@@ -20,8 +23,12 @@ module.exports = {
 
             if (message.author.bot) return; // Ignore bots
 
-            const args = message.content.split(/ +/);
-            const commandName = args.shift().toLowerCase().substring(process.env.PREFIX.length);
+            // we cannot fully split the arguments because of the experimental transformer
+            const content = message.content.substring(process.env.PREFIX.length);
+            const unparsedArgs = content.substring(content.indexOf(' '));
+            const commandName = content.substring(0, content.indexOf(' '));
+            const unparsedArgsOffset = process.env.PREFIX.length + content.indexOf(' ');
+
             const command = message.client.prefixCommands.get(commandName);
 
             // If command doesnt exist, return
@@ -79,9 +86,25 @@ module.exports = {
                 message.client.cooldowns.set(message.author.id, userCooldowns);
             }
 
+            let provider;
+
+            if (command.experimental) {
+                const transformation = await transform(message, unparsedArgs, command.arguments);
+
+                if (transformation.fail) {
+                    await failHandler(message, unparsedArgsOffset, transformation);
+                    return;
+                }
+
+                provider = [message, transformation.value];
+            }
+            else {
+                provider = [message, unparsedArgs.split(/ +/)];
+            }
+
             // Execute the command
             try {
-                command.execute(message, args);
+                command.execute(...provider);
             }
             catch (error) {
                 console.error(error);
