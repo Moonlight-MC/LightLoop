@@ -17,6 +17,25 @@ function stateless(transformer) {
         return transformer(argument, options);
     };
 }
+const USER_MENTION_REGEX = /<@([0-9]{18})>/;
+
+function isNumeric(value) {
+    return /^\d+$/.test(value);
+}
+
+function matchID(str) {
+    const match = USER_MENTION_REGEX.exec(str);
+
+    if (match !== null) {
+        return match[1];
+    }
+    else if (str.length === 18 && isNumeric(str)) {
+        return str;
+    }
+
+    return null;
+}
+
 
 module.exports.registry = {
     string: stateless((argument, options) => {
@@ -165,11 +184,10 @@ module.exports.registry = {
             };
         }
         
-        const regex = /<@([0-9]{18})>/;
-        const result = regex.exec(argument);
+        const result = matchID(argument);
         if (result !== null) {
             try {
-                const user = await message.guild.members.fetch(result[1]);
+                const user = await message.guild.members.fetch(result);
                 return {
                     fail: false,
                     value: user,
@@ -206,15 +224,10 @@ module.exports.registry = {
             if (options.tryAuthor) {
                 const url = context.author.displayAvatarURL({ format: 'png' });
 
-                if (url !== null) {
-                    return {
-                        fail: false,
-                        value: url,
-                    };
-                }
-                else {
-                    failure.join(`${refer}'s author has no avatar`);
-                }
+                return {
+                    fail: false,
+                    value: url,
+                };
             }
             
             if (options.tryAttachment) {
@@ -259,11 +272,11 @@ module.exports.registry = {
         }
 
         if (options.tryMention) {
-            const regex = /<@([0-9]{18})>/;
-            const result = regex.exec(argument);
+
+            const result = matchID(argument);
             if (result !== null) {
                 try {
-                    const user = await message.guild.members.fetch(result[1]);
+                    const user = await message.guild.members.fetch(result);
                     const url = user.displayAvatarURL({ format: 'png' });
 
                     return {
