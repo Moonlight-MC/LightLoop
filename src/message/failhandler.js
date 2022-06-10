@@ -1,7 +1,7 @@
 const { merge } = require('./ansiformat');
 
 function escape(content) {
-    return content.replace('`', '`\u200b');
+    return content.replaceAll('`', '`\u200b').replaceAll('@', '@\u200b');
 }
 
 
