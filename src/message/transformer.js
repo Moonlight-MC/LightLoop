@@ -1,6 +1,15 @@
 const { registry } = require('./methods/registry.js');
 const { split } = require('./parser.js');
 
+/**
+ * 
+ * @param {string} text 
+ * @param {string} padding 
+ * @returns string
+ */
+function pad(text, padding) {
+    return padding + text.replaceAll('\n', '\n' + padding);
+}
 
 async function transform(message, unparsed, config) {
     const result = split(unparsed);
@@ -43,10 +52,10 @@ async function transform(message, unparsed, config) {
 
                 highlight.set(range[0], '[2;33m');
                 highlight.set(range[1], '[0;2m');
-
+                
                 return {
                     fail: true,
-                    reason: `Parsing error for argument ${definition.name}:\n${parseResult.reason}`,
+                    reason: `Parsing error for argument ${definition.name}:\n${pad(parseResult.reason, '    ')}`,
                     highlightRange: range,
                     highlight: highlight,
                 };

@@ -98,7 +98,7 @@ module.exports.registry = {
             if (options.min > number) {
                 return {
                     fail: true,
-                    reason: `Number exceeds minimum allowed: ${options.max}`,
+                    reason: `Number exceeds minimum allowed: ${options.min}`,
                 };
             }
         }
@@ -148,6 +148,31 @@ module.exports.registry = {
 
         const failure = [];
 
+        if (argument !== null) {
+            const result = matchID(argument);
+        
+            if (result !== null) {
+                try {
+                    const user = await message.guild.members.fetch(result);
+                    return {
+                        fail: false,
+                        value: user,
+                    };
+                }
+                catch (_) {
+                    // doesn't exist or malformed
+                    failure.push('Could not find mentioned user');
+                }
+            }
+            else {
+                failure.push('Argument is not a mention');
+            }
+
+        }
+        else {
+            failure.push('Argument not provided');
+        }
+
         if (options.tryReply) {
             try {
                 const replied = await message.fetchReference();
@@ -170,41 +195,14 @@ module.exports.registry = {
             catch (_) {
                 // we tried
 
-                failure.push('Fetching replied message failed');
+                failure.push('Fetching replied message failed, or there is no replied message');
             }
-        }
-
-        if (argument === null) {
-            failure.push('Argument not provided');
-
-            return {
-                fail: true,
-                reason: failure.join('\n'),
-                useDefault: true,
-            };
-        }
-        
-        const result = matchID(argument);
-        if (result !== null) {
-            try {
-                const user = await message.guild.members.fetch(result);
-                return {
-                    fail: false,
-                    value: user,
-                };
-            }
-            catch (_) {
-                // doesn't exist or malformed
-                failure.push('Could not find mentioned user');
-            }
-        }
-        else {
-            failure.push('Argument is not a mention');
         }
 
         return {
             fail: true,
             reason: failure.join('\n'),
+            useDefault: argument === null,
         };
     },
 
@@ -216,66 +214,11 @@ module.exports.registry = {
             tryMention: true,
             tryAuthor: true,
         }, options);
-        /**
-         * 
-         * @param {import('discord.js').Message} context
-         */
-        function fetchOnContext(context, refer) {
-            if (options.tryAttachment) {
-                if (context.attachments.size > 0) {
-                    const url = context.attachments.first().url;
-
-                    return {
-                        fail: false,
-                        value: url,
-                    };
-                }
-                else {
-                    failure.join(`${refer} has no attachments`);
-                }
-            }
-
-            if (options.tryAuthor) {
-                const url = context.author.displayAvatarURL({ format: 'png' });
-
-                return {
-                    fail: false,
-                    value: url,
-                };
-            }
-            
-
-            return null;
-        }
 
         const failure = [];
 
-        if (options.tryRepliedContext) {
-            try {
-                const replied = await message.fetchReference();
-
-                const result = fetchOnContext(replied, 'replied message');
-
-                if (result !== null) {
-                    return {
-                        fail: false,
-                        consume: false,
-                        value: result.value,
-                    };
-                }
-
-            }
-            catch (_) {
-                // we tried
-
-                failure.push('Fetching replied message failed');
-            }
-        }
-
         if (argument !== null) {
-
             if (options.tryMention) {
-
                 const result = matchID(argument);
                 if (result !== null) {
                     try {
@@ -307,8 +250,65 @@ module.exports.registry = {
                     };
                 }
                 else {
-                    failure.join('Argument is not an Url');
+                    failure.push('Argument is not an Url');
                 }
+            }
+        }
+        else {
+            failure.push('Argument not provided');
+        }
+
+        /**
+         * 
+         * @param {import('discord.js').Message} context
+         */
+        function fetchOnContext(context, refer) {
+            if (options.tryAttachment) {
+                if (context.attachments.size > 0) {
+                    const url = context.attachments.first().url;
+
+                    return {
+                        fail: false,
+                        value: url,
+                    };
+                }
+                else {
+                    failure.push(`${refer} has no attachments`);
+                }
+            }
+
+            if (options.tryAuthor) {
+                const url = context.author.displayAvatarURL({ format: 'png' });
+
+                return {
+                    fail: false,
+                    value: url,
+                };
+            }
+            
+
+            return null;
+        }
+
+        if (options.tryRepliedContext) {
+            try {
+                const replied = await message.fetchReference();
+
+                const result = fetchOnContext(replied, 'replied message');
+
+                if (result !== null) {
+                    return {
+                        fail: false,
+                        consume: false,
+                        value: result.value,
+                    };
+                }
+
+            }
+            catch (_) {
+                // we tried
+
+                failure.push('Fetching replied message failed, or there is no replied message');
             }
         }
 
@@ -330,5 +330,4 @@ module.exports.registry = {
             useDefault: argument === null,
         };
     },
-
 };
