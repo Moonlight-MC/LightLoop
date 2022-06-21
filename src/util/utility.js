@@ -107,3 +107,13 @@ function setBackendStatusChannel(client, status) {
         catch { }
     });
 }
+
+/**
+ * Pads all lines of a given text with something
+ * @param {string} text 
+ * @param {string} padding 
+ * @returns string
+ */
+module.exports.pad = function (text, padding) {
+    return padding + text.replaceAll('\n', '\n' + padding);
+};

@@ -9,9 +9,12 @@ module.exports = {
     // this is appended into help's command usage
     description: 'This command tests the experimental argument thing',
 
-    arguments: [
-        // an array of arguments
+    // the arguments
+    // 'arguments' is a single array of arguments, which executes the main-level 'execute' function
+    // 'overloads' is an array which takes an object with it's own arguments, description and executor
 
+    // 'arguments' precedes 'overloads'
+    arguments: [
         {
             // the name of the argument
             name: 'spam',
@@ -42,6 +45,16 @@ module.exports = {
             // 'options' defaults to {}
             options: {
                 value: 'b',
+            },
+        },
+    ],
+
+    overloads: [
+        {
+            arguments: [],
+
+            async execute(message, args) {
+                console.log(args);
             },
         },
     ],

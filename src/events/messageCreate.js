@@ -6,7 +6,9 @@ const FaqFilter = require('../filters/faqFilter');
 const utility = require('../util/utility');
 
 const { transform } = require('../message/transformer');
-const { default: failHandler } = require('../message/failhandler');
+const { generateText, escape } = require('../message/failhandler');
+const { split } = require('../message/parser');
+const { pad } = require('../util/utility');
 
 module.exports = {
     name: 'messageCreate',
@@ -34,7 +36,6 @@ module.exports = {
 
             const unparsedArgs = content.substring(index);
             const commandName = content.substring(0, index);
-            const unparsedArgsOffset = process.env.PREFIX.length + index;
 
             const command = message.client.prefixCommands.get(commandName);
 
@@ -94,24 +95,61 @@ module.exports = {
             }
 
             let provider;
+            let executor;
 
             if (command.experimental) {
-                const transformation = await transform(message, unparsedArgs, command.arguments);
+                try {
+                    const splitted = split(unparsedArgs);
 
-                if (transformation.fail) {
-                    await failHandler(message, unparsedArgsOffset, transformation);
-                    return;
+                    if (splitted.fail) {
+                        await message.reply(escape(splitted.reason));
+                        return;
+                    }
+
+                    let overloads;
+
+                    if ('arguments' in command) {
+                        overloads = [command];
+                    }
+                    else {
+                        overloads = command.overloads;
+                    }
+
+                    const failComposite = [];
+                    let failed = true;
+
+                    for (let i = 0; i < overloads.length; i++) {
+                        const transformation = await transform(message, unparsedArgs, splitted.value, overloads[i].arguments);
+
+                        if (transformation.fail) {
+                            failComposite.push(generateText(splitted.value, overloads[i].arguments, transformation));
+                        }
+                        else {
+                            provider = [message, transformation.value];
+                            executor = overloads[i].execute;
+                            failed = false;
+                            break;
+                        }
+                    }
+
+                    if (failed) {
+                        await message.reply(`\`\`\`\nError while parsing arguments (Least Prioritised Overload Last)\n${pad(failComposite.join('\n\n'), '    ')}\`\`\``);
+                        return;
+                    }
                 }
-
-                provider = [message, transformation.value];
+                catch (error) {
+                    console.error(error);
+                    await message.reply('There was an error while parsing this command');
+                }
             }
             else {
                 provider = [message, unparsedArgs.split(/ +/)];
+                executor = command.execute;
             }
 
             // Execute the command
             try {
-                command.execute(...provider);
+                executor(...provider);
             }
             catch (error) {
                 console.error(error);

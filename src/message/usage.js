@@ -1,15 +1,39 @@
 module.exports.compile = function (definition) {
-    let commandUsage = '`' + process.env.PREFIX;
-    commandUsage += definition.name;
+    const usages = [];
 
-    const compiledArguments = definition.arguments.map(val => {
+    let overloads;
+
+    if ('arguments' in definition) {
+        overloads = [definition];
+    }
+    else {
+        overloads = definition.overloads;
+    }
+
+    for (let i = 0; i < overloads.length; i++) {
+        let commandUsage = '`' + process.env.PREFIX;
+        commandUsage += definition.name;
+
+        const compiledArguments = formatArguments(overloads[i].arguments).join(' ');
+
+        commandUsage += ' ' + compiledArguments + '` - ' + overloads[i].description;
+        usages.push(commandUsage);
+    }
+
+
+    return usages;
+};
+
+
+function formatArguments(args) {
+    return args.map(val => {
         let name = val.name;
         
         if ('type' in val) {
             name += `: ${val.type}`;
         }
 
-        if ('default' in definition || 'defaultFactory' in definition) {
+        if ('default' in val || 'defaultFactory' in val) {
             name = `[${name}]`;
         }
         else {
@@ -17,9 +41,7 @@ module.exports.compile = function (definition) {
         }
 
         return name;
-    }).join(' ');
+    });
+}
 
-    commandUsage += ' ' + compiledArguments + '` - ' + definition.description;
-
-    return commandUsage;
-};
+module.exports.formatArguments = formatArguments;

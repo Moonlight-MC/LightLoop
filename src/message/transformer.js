@@ -1,34 +1,16 @@
 const { registry } = require('./methods/registry.js');
-const { split } = require('./parser.js');
+const { pad } = require('../util/utility');
 
-/**
- * 
- * @param {string} text 
- * @param {string} padding 
- * @returns string
- */
-function pad(text, padding) {
-    return padding + text.replaceAll('\n', '\n' + padding);
-}
-
-async function transform(message, unparsed, config) {
-    const result = split(unparsed);
-    let splitted;
-    if (result.fail) {
-        return result;
-    }
-    else {
-        splitted = result.value;
-    }
-
+async function transform(message, unparsed, split, config) {
     const ret = Object.create(null);
+    const consumeContext = [];
 
     let argumentPointer = 0;
     let argumentStackPointer = 0;
 
     for (argumentStackPointer = 0; argumentStackPointer < config.length; argumentStackPointer++) {
         const definition = config[argumentStackPointer];
-        const rawArgument = splitted[argumentPointer] || null;
+        const rawArgument = split[argumentPointer] || null;
 
         const parser = definition.parser || registry[definition.type || 'string'];
 
@@ -37,6 +19,7 @@ async function transform(message, unparsed, config) {
         if (parseResult.fail) {
             if (parseResult.useDefault && ('default' in definition || 'defaultFactory' in definition)) {
                 ret[definition.name] = 'default' in definition ? definition.default : await definition.defaultFactory(message);
+                consumeContext.push('DEF');
             }
             else {
                 let range;
@@ -58,11 +41,15 @@ async function transform(message, unparsed, config) {
                     reason: `Parsing error for argument ${definition.name}:\n${pad(parseResult.reason, '    ')}`,
                     highlightRange: range,
                     highlight: highlight,
+                    consumeContext,
                 };
             }
         }
         else {
-            if (!('consume' in parseResult) || parseResult.consume) {
+            const consume = !('consume' in parseResult) || parseResult.consume;
+
+            consumeContext.push(consume ? 'CONS' : 'CONT');
+            if (consume) {
                 argumentPointer += 1;
             }
 
@@ -70,17 +57,19 @@ async function transform(message, unparsed, config) {
         }
     }
 
-    if (argumentStackPointer < splitted.length) {
+    if (argumentStackPointer < split.length) {
         return {
             fail: true,
             reason: 'Too many arguments provided',
-            highlightRange: [splitted[argumentStackPointer].start, unparsed.length],
+            highlightRange: [split[argumentStackPointer].start, unparsed.length],
+            consumeContext,
         };
     }
 
     return {
         fail: false,
         value: ret,
+        consumeContext,
     };
 }
 

@@ -22,8 +22,6 @@ module.exports = {
                 max: 65,
                 min: 5,
             },
-
-            default: 18,
         },
     ],
     /**

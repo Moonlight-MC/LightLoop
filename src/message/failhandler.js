@@ -1,31 +1,44 @@
-const { merge } = require('./ansiformat');
+const { formatArguments } = require('./usage');
+const { pad } = require('../util/utility');
 
 function escape(content) {
     return content.replaceAll('`', '`\u200b').replaceAll('@', '@\u200b');
 }
 
+module.exports.escape = escape;
+module.exports.generateText = function (split, args, obj) {
+    let argumentLine = '| ';
+    let syntaxLine = '| ';
+    const syntax = formatArguments(args);
 
-module.exports.default = async function (message, offset, obj) {
-    const range = ' '.repeat(obj.highlightRange[0] + offset) + '~'.repeat(obj.highlightRange[1] - obj.highlightRange[0]);
+    let providedIdx = 0;
 
-    let content = message.content;
+    for (let syntaxIdx = 0; syntaxIdx < syntax.length; syntaxIdx++) {
+        const consumedInput = obj.consumeContext[syntaxIdx] ?? 'CONS';
 
-    if ('highlight' in obj) {
-        content = merge(content, offset, obj.highlight);
+        const providedArg = consumedInput === 'CONS' ? (split[providedIdx]?.value ?? '') : consumedInput;
+        const syntaxArg = syntax[syntaxIdx] ?? '';
+
+        const requiredLength = Math.max(providedArg.length, syntaxArg.length);
+
+        argumentLine += providedArg + ' '.repeat(requiredLength - providedArg.length) + '    ';
+        syntaxLine += syntaxArg + ' '.repeat(requiredLength - syntaxArg.length) + '    ';
+
+        if (consumedInput === 'CONS') {
+            providedIdx += 1;
+        }
     }
 
-    let send = `\`\`\`ansi
-
-${escape(content)}
-[0;35m${range}[0;2m
-
-${escape(obj.reason)}
-\`\`\``;
-
-    // max's 2000, but 300 sounds reasonable enough
-    if (send.length > 300) {
-        send = `\`\`\`${escape(obj.reason)}\`\`\``;
+    for (; providedIdx < split.length; providedIdx++) {
+        argumentLine += split[providedIdx].value;
     }
 
-    await message.reply(send);
+
+    const send = `Error for overload
+    ${escape(argumentLine)}
+    ${escape(syntaxLine)}
+
+${escape(pad(obj.reason, '    '))}`;
+
+    return send;
 };
