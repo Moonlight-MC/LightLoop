@@ -9,6 +9,8 @@ module.exports.escape = escape;
 module.exports.generateText = function (split, args, obj) {
     let argumentLine = '| ';
     let syntaxLine = '| ';
+    let highlightLine = '| ';
+
     const syntax = formatArguments(args);
 
     let providedIdx = 0;
@@ -23,6 +25,7 @@ module.exports.generateText = function (split, args, obj) {
 
         argumentLine += providedArg + ' '.repeat(requiredLength - providedArg.length) + '    ';
         syntaxLine += syntaxArg + ' '.repeat(requiredLength - syntaxArg.length) + '    ';
+        highlightLine += (obj.highlightedArgument === syntaxIdx ? '~' : ' ').repeat(requiredLength) + '    ';
 
         if (consumedInput === 'CONS') {
             providedIdx += 1;
@@ -37,6 +40,7 @@ module.exports.generateText = function (split, args, obj) {
     const send = `Error for overload
     ${escape(argumentLine)}
     ${escape(syntaxLine)}
+    ${escape(highlightLine)}
 
 ${escape(pad(obj.reason, '    '))}`;
 

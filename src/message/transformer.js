@@ -22,25 +22,10 @@ async function transform(message, unparsed, split, config) {
                 consumeContext.push('DEF');
             }
             else {
-                let range;
-
-                if (rawArgument === null) {
-                    range = [unparsed.length + 1, unparsed.length + 5];
-                }
-                else {
-                    range = [rawArgument.start, rawArgument.start + rawArgument.value.length + (rawArgument.quoted ? 2 : 0)];
-                }
-
-                const highlight = new Map();
-
-                highlight.set(range[0], '[2;33m');
-                highlight.set(range[1], '[0;2m');
-                
                 return {
                     fail: true,
                     reason: `Parsing error for argument ${definition.name}:\n${pad(parseResult.reason, '    ')}`,
-                    highlightRange: range,
-                    highlight: highlight,
+                    highlightedArgument: argumentStackPointer,
                     consumeContext,
                 };
             }
@@ -57,11 +42,10 @@ async function transform(message, unparsed, split, config) {
         }
     }
 
-    if (argumentStackPointer < split.length) {
+    if (argumentPointer < split.length) {
         return {
             fail: true,
             reason: 'Too many arguments provided',
-            highlightRange: [split[argumentStackPointer].start, unparsed.length],
             consumeContext,
         };
     }

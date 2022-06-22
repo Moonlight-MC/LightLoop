@@ -140,6 +140,7 @@ module.exports = {
                 catch (error) {
                     console.error(error);
                     await message.reply('There was an error while parsing this command');
+                    return;
                 }
             }
             else {
