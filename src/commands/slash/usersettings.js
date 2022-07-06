@@ -53,7 +53,7 @@ module.exports = {
         const stored = DataStorage.usersettings.map.get(id);
 
         if (name == null && value == null) {
-            interaction.reply('```json\n' + Object.entries(options).map(val => `"${val[1].name}": ${stored.get(val[0])}\n`) + '```');
+            interaction.reply('```json\n' + Object.entries(options).map(val => `"${val[1].name}": ${stored.get(val[0])}`).join('\n') + '```');
         }
         else if (name != null && value == null) {
             if (name in options) {
