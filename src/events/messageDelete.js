@@ -15,6 +15,8 @@ module.exports = {
 
         if (!message.guild) return; // Ignore DM
 
+        message.client.proxyTracker.handleMessageDelete(message);
+
         if (DataStorage.guildsettings.guilds?.get(message.guild.id)?.get('enable_message_logging') != 'true') return; // Ignore if logging is disabled
         if (message.author.id == message.client.user.id) return; // Ignore self
 

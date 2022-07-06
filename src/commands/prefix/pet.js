@@ -29,22 +29,27 @@ module.exports = {
      * @param {Discord.Message} message 
      * @param {*} args 
      */
-    async execute(message, args) { // eslint-disable-line no-unused-vars
+    async execute(context, args) { // eslint-disable-line no-unused-vars
         try {
             const animatedGif = await petPetGif(args.what, {
                 resolution: 128,
                 framerate: args.speed,
             });
 
-            message.reply({
-                files: [new Discord.MessageAttachment(
-                    animatedGif,
-                    'pet.gif',
-                )],
-            }).catch(console.error);
+            try {
+                await context.reply({
+                    files: [new Discord.MessageAttachment(
+                        animatedGif,
+                        'pet.gif',
+                    )],
+                });
+            }
+            catch (e) {
+                console.error(e);
+            }
         }
         catch (err) {
-            message.reply(err.message);
+            await context.reply(err.message);
         }
     },
 };

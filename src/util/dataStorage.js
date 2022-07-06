@@ -4,7 +4,7 @@ const path = require('path');
 const storageDirectoryPath = path.join(__dirname, '../..', 'storage');
 const backupDirectoryPath = path.join(storageDirectoryPath, 'backups');
 
-const containerNames = ['storage', 'guildsettings'];
+const containerNames = ['storage', 'guildsettings', 'usersettings'];
 
 const containers = [];
 

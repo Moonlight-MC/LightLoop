@@ -9,6 +9,7 @@ const { transform } = require('../message/transformer');
 const { generateText, escape } = require('../message/failhandler');
 const { split } = require('../message/parser');
 const { pad } = require('../util/utility');
+const { Context } = require('../message/context');
 
 module.exports = {
     name: 'messageCreate',
@@ -19,6 +20,8 @@ module.exports = {
     async execute(message) {
 
         if (message.author.id == message.client.user.id) return; // Ignore self
+
+        message.client.proxyTracker.handleMessageCreate(message);
 
         // Prefix commands handling
         if (message.content.startsWith(process.env.PREFIX)) {
@@ -96,13 +99,18 @@ module.exports = {
 
             let provider;
             let executor;
+            let finaliser;
 
             if (command.experimental) {
+                let context = null;
                 try {
+                    context = new Context(message.author, message, message.client.proxyTracker);
+
                     const splitted = split(unparsedArgs);
 
                     if (splitted.fail) {
-                        await message.reply(escape(splitted.reason));
+                        await context.reply(escape(splitted.reason));
+                        context.destroy();
                         return;
                     }
 
@@ -125,7 +133,7 @@ module.exports = {
                             failComposite.push(generateText(splitted.value, overloads[i].arguments, transformation));
                         }
                         else {
-                            provider = [message, transformation.value];
+                            provider = [context, transformation.value];
                             executor = overloads[i].execute;
                             failed = false;
                             break;
@@ -133,24 +141,32 @@ module.exports = {
                     }
 
                     if (failed) {
-                        await message.reply(`\`\`\`\nError while parsing arguments (Least Prioritised Overload Last)\n${pad(failComposite.join('\n\n'), '    ')}\`\`\``);
+                        await context.reply(`\`\`\`\nError while parsing arguments (Least Prioritised Overload Last)\n${pad(failComposite.join('\n\n'), '    ')}\`\`\``);
+                        context.destroy();
                         return;
                     }
                 }
                 catch (error) {
                     console.error(error);
-                    await message.reply('There was an error while parsing this command');
+                    await context.reply('There was an error while parsing this command');
+                    context.destroy();
                     return;
                 }
+
+                finaliser = () => {
+                    context.destroy();
+                };
             }
             else {
                 provider = [message, unparsedArgs.split(/ +/)];
                 executor = command.execute;
+                finaliser = () => undefined;
             }
 
             // Execute the command
             try {
-                executor(...provider);
+                await executor(...provider);
+                finaliser();
             }
             catch (error) {
                 console.error(error);

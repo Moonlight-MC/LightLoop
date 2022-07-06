@@ -53,13 +53,16 @@ module.exports = {
         {
             arguments: [],
 
-            async execute(message, args) {
+            async execute(context, args) {
                 console.log(args);
             },
         },
     ],
 
-    async execute(message, args) {
+
+    // note: this function should ALWAYS await the promises it creates
+    // because cleanup code is run after it
+    async execute(context, args) {
         // args are the arguments processed
 
         console.log(args);

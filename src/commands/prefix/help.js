@@ -51,15 +51,15 @@ module.exports = {
              * 
              * @param {Discord.Message} message 
              */
-            async execute(message) {
+            async execute(context) {
 
-                const isModerator = utility.isModerator(message.member);
+                const isModerator = utility.isModerator(context.author);
 
                 let commands = '**Available commands**\n';
                 let modCommands = '**Moderator commands**\n';
 
-                message.client.slashCommands.forEach(command => {
-                    if (message.guild.id != process.env.MAIN_GUILD && !command.allowInOtherGuilds) return;
+                context.client.slashCommands.forEach(command => {
+                    if (context.guild.id != process.env.MAIN_GUILD && !command.allowInOtherGuilds) return;
                     if (command.moderator) {
                         modCommands += getUsage(command) + '\n';
                     }
@@ -68,8 +68,8 @@ module.exports = {
                     }
                 });
 
-                message.client.prefixCommands.forEach(command => {
-                    if (message.guild.id != process.env.MAIN_GUILD && !command.allowInOtherGuilds) return;
+                context.client.prefixCommands.forEach(command => {
+                    if (context.guild.id != process.env.MAIN_GUILD && !command.allowInOtherGuilds) return;
                     if (command.moderator) {
                         modCommands += getUsage(command) + '\n';
                     }
@@ -78,7 +78,7 @@ module.exports = {
                     }
                 });
 
-                await message.reply({ embeds: [{ description: `${commands}\n${isModerator ? modCommands : ''}` }] });
+                await context.reply({ embeds: [{ description: `${commands}\n${isModerator ? modCommands : ''}` }] });
             },
         },
 
@@ -92,8 +92,8 @@ module.exports = {
             ],
             description: 'Get a specific command',
 
-            async execute(message, args) {
-                await message.reply({ embeds: [{ description: getUsage(args.what) }] });
+            async execute(context, args) {
+                await context.reply({ embeds: [{ description: getUsage(args.what) }] });
             },
         },
     ],

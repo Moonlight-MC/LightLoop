@@ -2,6 +2,7 @@ require('dotenv').config();
 require('./src/util/dataStorage').load();
 const fs = require('fs');
 const { Client, Collection, Intents } = require('discord.js');
+const { ProxyMessageTracker } = require('./src/message/proxytracker');
 
 const client = new Client({
     intents: [
@@ -53,5 +54,7 @@ for (const file of eventFiles) {
         client.on(event.name, (...args) => event.execute(...args));
     }
 }
+
+client.proxyTracker = new ProxyMessageTracker();
 
 client.login(process.env.TOKEN);
