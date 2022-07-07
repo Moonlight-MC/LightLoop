@@ -53,20 +53,32 @@ module.exports = {
         const stored = DataStorage.usersettings.map.get(id);
 
         if (name == null && value == null) {
-            interaction.reply('```json\n' + Object.entries(options).map(val => `"${val[1].name}": ${stored.get(val[0])}`).join('\n') + '```');
+            await interaction.reply({
+                content: '```json\n' + Object.entries(options).map(val => `"${val[1].name}": ${stored.get(val[0])}`).join('\n') + '```',
+                ephemeral: true,
+            });
         }
         else if (name != null && value == null) {
             if (name in options) {
-                interaction.reply(`"${options[name].name}" is set to ` + stored.get(name) + '.');
+                await interaction.reply({
+                    content:`"${options[name].name}" is set to ` + stored.get(name) + '.',
+                    ephemeral: true,
+                });
             }
             else {
-                interaction.reply('That setting does not exist.');
+                await interaction.reply({
+                    content:'That setting does not exist.',
+                    ephemeral: true,
+                });
             }
         }
         else if (name != null && value != null) {
             const val = value === 'true' || value === 'yes';
             stored.set(name, val);
-            interaction.reply(`"${options[name].name}" has been set to ` + val + '.');
+            await interaction.reply({
+                content:`"${options[name].name}" has been set to ` + val + '.',
+                ephemeral: true,
+            });
             DataStorage.save('usersettings');
         }
     },

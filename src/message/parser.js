@@ -69,8 +69,6 @@ function split(content) {
         return {
             fail: true,
             reason: 'Unclosed quotation mark',
-            highlightRange: [last, content.length],
-            highlight: map,
         };
     }
 

@@ -22,12 +22,17 @@ class Context {
 
         this.intervalId = null;
 
-        this.tracker.track(message);
+        // no proxying in a DM channel
+        if (message.channel.type === 'DM') {
+            this._waited = true;
+        }
+        else {
+            this._waited = false;
+            this.tracker.track(message);
+        }
 
         this.ping();
         this.intervalId = setInterval(this.ping.bind(this), 10000);
-
-        this._waited = false;
     }
 
     async ping() {
@@ -108,7 +113,9 @@ class Context {
     }
 
     destroy() {
-        this.tracker.remove(this.message);
+        if (this.message.channel.type !== 'DM') {
+            this.tracker.remove(this.message);
+        }
         
         this.stopTyping();
     }
