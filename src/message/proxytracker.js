@@ -192,7 +192,8 @@ class ProxyMessageTracker {
                 for (let i = 0; i < candidates.length; i++) {
                     const candidate = candidates[i];
 
-                    if (candidate.content === matchingContent) {
+                    // a full-match fails for tupperbox
+                    if (candidate.content.endsWith(matchingContent)) {
                         candidates.splice(i, 1);
                         this.finalised.get(message.channelId).set(message.id, candidate);
 

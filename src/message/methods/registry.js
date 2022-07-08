@@ -1,7 +1,7 @@
 const utility = require('../../util/utility');
 
 function stateless(transformer) {
-    return async (_message, argument, options) => {
+    return async (_context, argument, options) => {
         // the stateless transformer has no other way to provide
         // the argument other than the argument itself
         // so we check if it has been provided in the first place here
@@ -140,9 +140,10 @@ module.exports.registry = {
      * @param {string} argument 
      * @param {*} options 
      */
-    member: async (message, argument, options) => {
+    member: async (context, argument, options) => {
         options = Object.assign({
             tryReply: true,
+            trySelf: true,
             forceNonWebhook: true,
         }, options);
 
@@ -153,7 +154,7 @@ module.exports.registry = {
         
             if (result !== null) {
                 try {
-                    const user = await message.guild.members.fetch(result);
+                    const user = await context.message.guild.members.fetch(result);
                     return {
                         fail: false,
                         value: user,
@@ -175,7 +176,7 @@ module.exports.registry = {
 
         if (options.tryReply) {
             try {
-                const replied = await message.fetchReference();
+                const replied = await context.message.fetchReference();
 
                 if ((!replied.webhookId) || !options.forceNonWebhook) {
                     // the reason why webhooks are disallowed by default
@@ -185,7 +186,7 @@ module.exports.registry = {
                     return {
                         fail: false,
                         consume: false,
-                        value: replied.author,
+                        value: replied.member ?? replied.author,
                     };
                 }
                 else {
@@ -199,6 +200,13 @@ module.exports.registry = {
             }
         }
 
+        if (options.trySelf) {
+            return {
+                fail: false,
+                value: context.message.member ?? context.message.author,
+            };
+        }
+
         return {
             fail: true,
             reason: failure.join('\n'),
@@ -206,13 +214,14 @@ module.exports.registry = {
         };
     },
 
-    image: async (message, argument, options) => {
+    image: async (context, argument, options) => {
         options = Object.assign({
             tryRepliedContext: true,
             tryUrl: true,
             tryAttachment: true,
             tryMention: true,
             tryAuthor: true,
+            tryProxy: true,
         }, options);
 
         const failure = [];
@@ -222,7 +231,7 @@ module.exports.registry = {
                 const result = matchID(argument);
                 if (result !== null) {
                     try {
-                        const user = await message.guild.members.fetch(result);
+                        const user = await context.message.guild.members.fetch(result);
                         const url = user.displayAvatarURL({ format: 'png' });
 
                         return {
@@ -253,6 +262,23 @@ module.exports.registry = {
                     failure.push('Argument is not an Url');
                 }
             }
+
+            if (options.tryProxy && argument === 'proxy') {
+                await context.processWaiting(true);
+                const proxied = context.tracker.getFor(context.message);
+
+                if (proxied === null || context.message.id === proxied.id) {
+                    failure.push('A proxy was not detected');
+                }
+                else {
+                    const url = proxied.author.displayAvatarURL({ format: 'png' });
+
+                    return {
+                        fail: false,
+                        value: url,
+                    };
+                }
+            }
         }
         else {
             failure.push('Argument not provided');
@@ -260,9 +286,9 @@ module.exports.registry = {
 
         /**
          * 
-         * @param {import('discord.js').Message} context
+         * @param {import('discord.js').Message} m
          */
-        function fetchOnContext(context, refer) {
+        function fetchOnContext(m, refer) {
             if (options.tryAttachment) {
                 if (context.attachments.size > 0) {
                     const url = context.attachments.first().url;
@@ -292,7 +318,7 @@ module.exports.registry = {
 
         if (options.tryRepliedContext) {
             try {
-                const replied = await message.fetchReference();
+                const replied = await context.message.fetchReference();
 
                 const result = fetchOnContext(replied, 'replied message');
 
@@ -312,7 +338,7 @@ module.exports.registry = {
             }
         }
 
-        const fetchResult = fetchOnContext(message, 'message');
+        const fetchResult = fetchOnContext(context.message, 'message');
 
         if (fetchResult !== null) {
             return {

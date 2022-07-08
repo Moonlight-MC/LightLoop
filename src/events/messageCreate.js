@@ -102,10 +102,9 @@ module.exports = {
             let finaliser;
 
             if (command.experimental) {
-                let context = null;
-                try {
-                    context = new Context(message.author, message, message.client.proxyTracker);
+                const context = new Context(message.member, message, message.client.proxyTracker);
 
+                try {
                     const splitted = split(unparsedArgs);
 
                     if (splitted.fail) {
@@ -127,7 +126,7 @@ module.exports = {
                     let failed = true;
 
                     for (let i = 0; i < overloads.length; i++) {
-                        const transformation = await transform(message, unparsedArgs, splitted.value, overloads[i].arguments);
+                        const transformation = await transform(context, unparsedArgs, splitted.value, overloads[i].arguments);
 
                         if (transformation.fail) {
                             failComposite.push(generateText(splitted.value, overloads[i].arguments, transformation));
@@ -166,11 +165,12 @@ module.exports = {
             // Execute the command
             try {
                 await executor(...provider);
-                finaliser();
             }
             catch (error) {
                 console.error(error);
             }
+
+            finaliser();
         }
         // If not a command and in a guild (not in DM), do some chat filter stuff
         else if (message.guild) {

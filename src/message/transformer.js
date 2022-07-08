@@ -1,7 +1,7 @@
 const { registry } = require('./methods/registry.js');
 const { pad } = require('../util/utility');
 
-async function transform(message, unparsed, split, config) {
+async function transform(context, unparsed, split, config) {
     const ret = Object.create(null);
     const consumeContext = [];
 
@@ -14,11 +14,11 @@ async function transform(message, unparsed, split, config) {
 
         const parser = definition.parser || registry[definition.type || 'string'];
 
-        const parseResult = await parser(message, rawArgument === null ? null : rawArgument.value, definition.options || {});
+        const parseResult = await parser(context, rawArgument === null ? null : rawArgument.value, definition.options || {});
 
         if (parseResult.fail) {
             if (parseResult.useDefault && ('default' in definition || 'defaultFactory' in definition)) {
-                ret[definition.name] = 'default' in definition ? definition.default : await definition.defaultFactory(message);
+                ret[definition.name] = 'default' in definition ? definition.default : await definition.defaultFactory(context);
                 consumeContext.push('DEF');
             }
             else {

@@ -1,32 +1,27 @@
 const Discord = require('discord.js'); // eslint-disable-line no-unused-vars
 const hexagonalImage = require('../../util/hexagonImage');
-const utility = require('../../util/utility');
 
 module.exports = {
     name: 'hexagon',
-    usage: '`?hexagon [userID|@user|imageURL]` - Create a hexagonal profile picture.',
+    description: 'Create a hexagonal profile picture.',
     allowInOtherGuilds: true,
+
+    experimental: true,
+    arguments: [
+        {
+            name: 'what',
+            type: 'image',
+        },
+    ],
     /**
      * 
      * @param {Discord.Message} message 
      * @param {String[]} args 
      */
     async execute(message, args) { // eslint-disable-line no-unused-vars
-
-        let fetchedMember = undefined;
         try {
-            if (args[0]) fetchedMember = await message.guild.members.fetch(args[0]);
-        }
-        // eslint-disable-next-line no-empty
-        catch { }
-
-        const member = fetchedMember || message.mentions.members.first();
-
-        const url = member?.displayAvatarURL({ format: 'png' }) ?? utility.getURLs(args[0] ?? '')?.at(0) ?? message.attachments.first()?.url;
-
-        try {
-            const image = await hexagonalImage(url);
-            message.reply({
+            const image = await hexagonalImage(args.what);
+            await message.reply({
                 files: [new Discord.MessageAttachment(
                     image,
                     'avatar.png',
@@ -35,7 +30,7 @@ module.exports = {
         }
         catch (err) {
             console.error(err);
-            message.reply('Couldn\'t find an image.');
+            await message.reply('Couldn\'t find an image.');
         }
     },
 };

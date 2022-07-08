@@ -39,7 +39,11 @@ class Context {
         await this.message.channel.sendTyping();
     }
 
-    async processWaiting() {
+    /**
+     * 
+     * @param {boolean} forceWaiting 
+     */
+    async processWaiting(forceWaiting) {
         if (!this._waited) {
             const id = this.message.guild.id + '-' + this.author.id;
             const stored = DataStorage.usersettings.map;
@@ -55,6 +59,8 @@ class Context {
                 shouldWait = false;
                 shouldAlert = false;
             }
+
+            shouldWait ||= forceWaiting;
 
             // don't wait again if it already has waited
             if (shouldWait) {
@@ -87,6 +93,7 @@ class Context {
         }
     }
     /**
+     * Send a message with replying if possible
      * 
      * @param  {...Parameters<import('discord.js').Message['reply']>} what 
      */
@@ -94,22 +101,23 @@ class Context {
         await this.processWaiting();
 
         try {
-            await this.tracker.getFor(this.message).reply(...what);
+            return await this.tracker.getFor(this.message).reply(...what);
         }
         catch (e) {
             // oh well
-            await this.message.channel.send(...what);
+            return await this.message.channel.send(...what);
         }
     }
 
     /**
+     * Send a message without replying
      * 
      * @param  {...Parameters<import('discord.js').TextBasedChannel['send']>} what 
      */
     async send(...what) {
         await this.processWaiting();
 
-        await this.message.channel.send(...what);
+        return await this.message.channel.send(...what);
     }
 
     destroy() {

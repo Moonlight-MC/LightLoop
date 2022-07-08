@@ -28,7 +28,7 @@ module.exports = {
             // 'parser' precedes 'type'
             // 'type' defaults to 'string'
             type: 'number',
-            parser: async (_message, _raw, options) => {
+            parser: async (_context, _raw, options) => {
                 return { fail: false, value: options.value };
             },
 
@@ -37,7 +37,7 @@ module.exports = {
 
             // 'default' precedes 'defaultFactory'
             default: 0,
-            defaultFactory: async (message) => message.author,
+            defaultFactory: async (context) => context.author,
 
             // 'options' are the options passed into the parser
             // it's values depend on the used parser
