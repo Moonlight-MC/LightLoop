@@ -35,11 +35,15 @@ class Context {
         this.intervalId = setInterval(this.ping.bind(this), 10000);
     }
 
+    /**
+     * sends typing
+     */
     async ping() {
         await this.message.channel.sendTyping();
     }
 
     /**
+     * Waits for a proxy service to take over, or until 5 seconds passes
      * 
      * @param {boolean} forceWaiting 
      */
@@ -119,7 +123,9 @@ class Context {
 
         return await this.message.channel.send(...what);
     }
-
+    /**
+     * Removes trackers and stops typing, called automatically
+     */
     destroy() {
         if (this.message.channel.type !== 'DM') {
             this.tracker.remove(this.message);
@@ -144,6 +150,9 @@ class Context {
         return this.message.attachments;
     }
 
+    /**
+     * Stops typing, called automatically
+     */
     stopTyping() {
         if (this.timeoutId !== null) {
             clearInterval(this.intervalId);

@@ -13,15 +13,16 @@ module.exports = {
             type: 'image',
         },
     ],
+
     /**
      * 
-     * @param {Discord.Message} message 
-     * @param {String[]} args 
+     * @param {import('../../message/context').Context} context 
+     * @param {{what: string}} args 
      */
-    async execute(message, args) { // eslint-disable-line no-unused-vars
+    async execute(context, args) { // eslint-disable-line no-unused-vars
         try {
             const image = await hexagonalImage(args.what);
-            await message.reply({
+            await context.reply({
                 files: [new Discord.MessageAttachment(
                     image,
                     'avatar.png',
@@ -30,7 +31,7 @@ module.exports = {
         }
         catch (err) {
             console.error(err);
-            await message.reply('Couldn\'t find an image.');
+            await context.reply('Couldn\'t find an image.');
         }
     },
 };

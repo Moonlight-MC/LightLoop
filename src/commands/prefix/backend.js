@@ -11,7 +11,7 @@ module.exports = {
     arguments: [],
     /**
      * 
-     * @param {Discord.Message} message 
+     * @param {import('../../message/context').Context} context 
      */
     async execute(context) {
         const msg = await context.send({

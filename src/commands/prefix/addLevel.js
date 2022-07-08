@@ -23,7 +23,7 @@ module.exports = {
     ],
     /**
      * 
-     * @param {Discord.Message} message 
+     * @param {import('../../message/context').Context} context 
      * @param {{member: import('discord.js').GuildMember, amount: number}} args 
      */
     async execute(context, args) {

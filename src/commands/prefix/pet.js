@@ -28,8 +28,8 @@ module.exports = {
     ],
     /**
      * 
-     * @param {Discord.Message} message 
-     * @param {*} args 
+     * @param {import('../../message/context').Context} context 
+     * @param {{what: string, speed: number}} args 
      */
     async execute(context, args) { // eslint-disable-line no-unused-vars
         try {

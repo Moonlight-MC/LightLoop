@@ -291,7 +291,7 @@ module.exports.registry = {
         function fetchOnContext(m, refer) {
             if (options.tryAttachment) {
                 if (context.attachments.size > 0) {
-                    const url = context.attachments.first().url;
+                    const url = m.attachments.first().url;
 
                     return {
                         fail: false,
@@ -304,7 +304,7 @@ module.exports.registry = {
             }
 
             if (options.tryAuthor) {
-                const url = context.author.displayAvatarURL({ format: 'png' });
+                const url = m.author.displayAvatarURL({ format: 'png' });
 
                 return {
                     fail: false,

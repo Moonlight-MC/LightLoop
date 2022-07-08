@@ -14,8 +14,8 @@ module.exports = {
     ],
     /**
      * 
-     * @param {Discord.Message} message 
-     * @param {String[]} args 
+     * @param {import('../../message/context').Context} context 
+     * @param {{member: import('discord.js').GuildMember}} args 
      */
     async execute(context, args) { // eslint-disable-line no-unused-vars
         if (!DataStorage.storage.people) DataStorage.storage.people = {};

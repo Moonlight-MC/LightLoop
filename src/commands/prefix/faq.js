@@ -15,6 +15,10 @@ module.exports = {
             description: 'View all entries in the faq',
             arguments: [],
 
+            /**
+             * 
+             * @param {import('../../message/context').Context} context 
+             */
             async execute(context) {
                 if (!DataStorage.storage.faq) DataStorage.storage.faq = new Map();
 
@@ -44,6 +48,11 @@ module.exports = {
                 },
             ],
 
+            /**
+             * 
+             * @param {import('../../message/context').Context} context 
+             * @param {{key: string}} args 
+             */
             async execute(context, args) {
                 if (!DataStorage.storage.faq) DataStorage.storage.faq = new Map();
 
@@ -73,6 +82,11 @@ module.exports = {
                 },
             ],
             
+            /**
+             * 
+             * @param {import('../../message/context').Context} context 
+             * @param {{key: string, value: string}} args 
+             */
             async execute(context, args) {
                 if (!DataStorage.storage.faq) DataStorage.storage.faq = new Map();
 

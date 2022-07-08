@@ -1,6 +1,12 @@
 const { formatArguments } = require('./usage');
 const { pad } = require('../util/utility');
 
+/**
+ * Escapes all vulnerable characters in the context of a discord message
+ * 
+ * @param {string} content 
+ * @returns 
+ */
 function escape(content) {
     return content.replaceAll('`', '`\u200b').replaceAll('@', '@\u200b');
 }

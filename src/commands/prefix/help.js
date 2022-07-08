@@ -49,7 +49,7 @@ module.exports = {
             description: 'Get all commands',
             /**
              * 
-             * @param {Discord.Message} message 
+             * @param {import('../../message/context').Context} context 
              */
             async execute(context) {
 
@@ -92,6 +92,11 @@ module.exports = {
             ],
             description: 'Get a specific command',
 
+            /**
+             * 
+             * @param {import('../../message/context').Context} context 
+             * @param {{what: string}} args 
+             */
             async execute(context, args) {
                 await context.reply({ embeds: [{ description: getUsage(args.what) }] });
             },
